@@ -126,40 +126,54 @@
   }
 }
 
-.leaflet-container {
-  background: #0a0e1a !important;
-  font-family: inherit;
-}
-.leaflet-tile {
-  filter: brightness(0.6) invert(1) contrast(0.9) hue-rotate(200deg) saturate(0.3) brightness(0.8);
-}
-.leaflet-control-attribution {
+.dark-map .maplibregl-ctrl-attrib {
   background: rgba(10, 14, 26, 0.7) !important;
   color: #64748b !important;
   font-size: 10px !important;
   border-radius: 4px !important;
   padding: 2px 6px !important;
 }
-.leaflet-control-attribution a {
-  color: #94a3b8 !important;
+.dark-map .maplibregl-ctrl-attrib a { color: #94a3b8 !important; }
+.dark-map .maplibregl-ctrl-group {
+  background: #131829 !important;
+  border: 1px solid #1f2540 !important;
 }
-.leaflet-control-zoom a {
-  background: #131a2c !important;
-  color: #f1f5f9 !important;
-  border-color: #1f2937 !important;
+.dark-map .maplibregl-ctrl-group button {
+  background-color: #131829 !important;
+  color: #e4e7ef !important;
 }
-.leaflet-control-zoom a:hover {
-  background: #1f2937 !important;
+.dark-map .maplibregl-ctrl-group button:hover {
+  background-color: #1f2540 !important;
 }
-.leaflet-popup-content-wrapper {
-  background: #131a2c !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #1f2937 !important;
+.dark-map .maplibregl-ctrl-group button + button {
+  border-top: 1px solid #1f2540 !important;
+}
+.dark-map .maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+  filter: invert(0.9);
+}
+.dark-map .maplibregl-popup-content {
+  background: #131829 !important;
+  color: #e4e7ef !important;
+  border: 1px solid #1f2540 !important;
   border-radius: 8px !important;
+  padding: 10px 12px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
 }
-.leaflet-popup-tip {
-  background: #131a2c !important;
-  border: 1px solid #1f2937 !important;
+.dark-map .maplibregl-popup-tip {
+  border-top-color: #131829 !important;
+  border-bottom-color: #131829 !important;
+}
+.dark-map .maplibregl-canvas:focus { outline: none; }
+
+.dark-map.is-satellite .maplibregl-popup-content {
+  background: rgba(8, 12, 24, 0.92) !important;
+  backdrop-filter: blur(6px);
+  border-color: rgba(96, 165, 250, 0.35) !important;
+  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.85) !important;
+}
+.dark-map.is-satellite .maplibregl-popup-tip {
+  border-top-color: rgba(8, 12, 24, 0.92) !important;
+  border-bottom-color: rgba(8, 12, 24, 0.92) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

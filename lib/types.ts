@@ -20,7 +20,7 @@ export interface Vehicle {
   heading: number | null;
   nextStopId: string | null;
   updatedAt: number;
-  direction?: "forward" | "backward";
+  direction: "forward" | "backward";
 }
 
 export interface Route {
@@ -30,6 +30,9 @@ export interface Route {
   color: string;
   mode?: string;
 }
+
+export type DirectionFilter = "both" | "forward" | "backward";
+export type { StyleMode } from "./map/style";
 
 export interface RoutePolylines {
   forward: Array<[number, number]>;

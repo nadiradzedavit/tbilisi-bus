@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import Providers from "@/components/Providers";
 import Nav from "@/components/Nav";
 import LanguageToggle from "@/components/LanguageToggle";

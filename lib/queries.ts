@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Locale, Vehicle } from "./types";
 
@@ -59,6 +60,90 @@ export function useVehicles(locale: Locale = "en", busId?: string) {
       json<Vehicle[]>(
         `/api/vehicles?locale=${locale}${busId ? `&busId=${encodeURIComponent(busId)}` : ""}`,
       ),
-    refetchInterval: 15_000,
+    refetchInterval: () => 2500 + Math.floor(Math.random() * 1000),
   });
+}
+
+export function useVehicleStream(locale: Locale = "en"): {
+  vehicles: Vehicle[];
+  isConnected: boolean;
+} {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  const retryRef = useRef(0);
+
+  const MAX_RETRIES = 3;
+  const MAX_DELAY = 30000;
+
+  const { data: polledData } = useQuery({
+    queryKey: ["vehicles-fallback", locale],
+    queryFn: () => json<Vehicle[]>(`/api/vehicles?locale=${locale}`),
+    enabled: useFallback,
+    refetchInterval: () => 2500 + Math.floor(Math.random() * 1000),
+  });
+
+  useEffect(() => {
+    let es: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    retryRef.current = 0;
+
+    const cleanup = () => {
+      if (es) {
+        es.close();
+        es = null;
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    };
+
+    const connect = () => {
+      cleanup();
+      es = new EventSource(`/api/vehicles/stream?locale=${locale}`);
+
+      es.onopen = () => {
+        setIsConnected(true);
+        retryRef.current = 0;
+        setUseFallback(false);
+      };
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setVehicles(data.vehicles ?? data);
+        } catch {
+          // ignore malformed events
+        }
+      };
+
+      es.onerror = () => {
+        setIsConnected(false);
+        es?.close();
+        es = null;
+
+        if (retryRef.current < MAX_RETRIES) {
+          const delay = Math.min(
+            1000 * Math.pow(2, retryRef.current),
+            MAX_DELAY,
+          );
+          retryRef.current++;
+          reconnectTimer = setTimeout(connect, delay);
+        } else {
+          setUseFallback(true);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      cleanup();
+      retryRef.current = 0;
+    };
+  }, [locale]);
+
+  const activeVehicles = isConnected ? vehicles : (polledData ?? vehicles);
+  return { vehicles: activeVehicles, isConnected };
 }

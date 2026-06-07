@@ -10,9 +10,11 @@ const CSP = [
   "default-src 'self'",
   `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://tile.openstreetmap.org",
+  "img-src 'self' data: https://*.basemaps.cartocdn.com https://server.arcgisonline.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://transit.ttc.com.ge",
+  "connect-src 'self' https://transit.ttc.com.ge https://overpass-api.de https://overpass.kumi.systems https://*.basemaps.cartocdn.com https://demotiles.maplibre.org https://server.arcgisonline.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -29,10 +31,17 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "tile.openstreetmap.org" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "*.basemaps.cartocdn.com" },
+    ],
   },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      {
+        source: "/((?!_next/static|__nextjs).*)",
+        headers: securityHeaders,
+      },
+    ];
   },
 };
 

@@ -43,17 +43,18 @@ export async function safeBusRoutes({
   }
 }
 
-export async function safeLocations({
+export async function fetchAllLocations({
   busId,
-  forward,
 }: {
   busId: string;
-  forward?: boolean;
-}): Promise<BusLocation[]> {
-  try {
-    const res = (await ttc.locations({ busId, forward })) as unknown;
-    if (Array.isArray(res)) {
-      return res.filter(
+}): Promise<Array<{ loc: BusLocation; direction: "forward" | "backward" }>> {
+  const fetchOne = async (
+    direction: "forward" | "backward",
+  ): Promise<Array<{ loc: BusLocation; direction: "forward" | "backward" }>> => {
+    try {
+      const res = (await ttc.locations({ busId, forward: direction === "forward" })) as unknown;
+      if (!Array.isArray(res)) return [];
+      const valid = res.filter(
         (x): x is BusLocation =>
           x !== null &&
           typeof x === "object" &&
@@ -62,11 +63,13 @@ export async function safeLocations({
           Number.isFinite(Number((x as BusLocation).lat)) &&
           Number.isFinite(Number((x as BusLocation).lon)),
       );
+      return valid.map((loc) => ({ loc, direction }));
+    } catch {
+      return [];
     }
-    return [];
-  } catch {
-    return [];
-  }
+  };
+  const [fwd, bwd] = await Promise.all([fetchOne("forward"), fetchOne("backward")]);
+  return [...fwd, ...bwd];
 }
 
 export async function safeStops({

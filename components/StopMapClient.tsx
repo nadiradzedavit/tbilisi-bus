@@ -2,13 +2,16 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useVehicles } from "@/lib/queries";
 import { haversineKm, normalizeStopId } from "@/lib/geo";
 import RouteBadge from "./RouteBadge";
-import type { BusStop, Locale, Vehicle } from "@/lib/types";
+import MapStyleToggle from "./MapStyleToggle";
+import type { BusStop, Locale, StyleMode, Vehicle } from "@/lib/types";
 
-const LiveMap = dynamic(() => import("./LiveMap"), {
+const STYLE_KEY = "map-style-mode";
+
+const LiveMap = dynamic(() => import("./DarkMap"), {
   ssr: false,
   loading: () => (
     <div className="grid h-full w-full place-items-center rounded-xl border border-border bg-bg-card/40 text-sm text-fg-dim">
@@ -34,6 +37,16 @@ export default function StopMapClient({
 }) {
   const { data: vehicles } = useVehicles(locale);
   const stopIds = useMemo(() => new Set(normalizeStopId(stop.id)), [stop.id]);
+  const [styleMode, setStyleMode] = useState<StyleMode>("dark");
+
+  useEffect(() => {
+    const v = window.localStorage.getItem(STYLE_KEY);
+    if (v === "dark" || v === "satellite") setStyleMode(v);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(STYLE_KEY, styleMode);
+  }, [styleMode]);
 
   const approaching = useMemo(() => {
     const all = (vehicles ?? []) as Vehicle[];
@@ -67,7 +80,8 @@ export default function StopMapClient({
 
   return (
     <div className="space-y-4">
-      <div className="h-80 w-full overflow-hidden rounded-xl border border-border">
+      <div className="relative h-80 w-full overflow-hidden rounded-xl border border-border">
+        <MapStyleToggle value={styleMode} onChange={setStyleMode} />
         <LiveMap
           stops={stopsForMap}
           vehicles={approaching}
@@ -75,6 +89,7 @@ export default function StopMapClient({
           zoom={14}
           className="h-full w-full"
           highlightKeys={highlightKeys}
+          styleMode={styleMode}
         />
       </div>
       {enriched.length > 0 ? (

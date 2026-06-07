@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ttc, stopId } from "@/lib/ttc";
+import { fetchAllLocations, stopId } from "@/lib/ttc";
 import { toVehicle } from "@/lib/vehicles";
 import type { Vehicle } from "@/lib/types";
 
@@ -19,22 +19,20 @@ export async function GET(
   const { id } = await params;
   const busId = stopId(id);
   try {
-    const data = (await withTimeout(
-      ttc.locations({ busId }),
+    const tagged = await withTimeout(
+      fetchAllLocations({ busId }),
       UPSTREAM_TIMEOUT_MS,
-    )) as Array<{
-      lat: number;
-      lon: number;
-      heading: number;
-      nextStopId?: string;
-    }> | null;
+    );
     const vehicles: Vehicle[] = [];
-    if (Array.isArray(data)) {
-      data.forEach((loc, i) => {
+    if (Array.isArray(tagged)) {
+      const counts = new Map<"forward" | "backward", number>();
+      tagged.forEach(({ loc, direction }) => {
         const lat = Number(loc.lat);
         const lon = Number(loc.lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-        vehicles.push(toVehicle(busId, i, loc, null));
+        const i = counts.get(direction) ?? 0;
+        counts.set(direction, i + 1);
+        vehicles.push(toVehicle(busId, i, loc, null, direction));
       });
     }
     return NextResponse.json(vehicles, {

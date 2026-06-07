@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Bus } from "lucide-react";
 import RouteBadge from "@/components/RouteBadge";
 import RouteMapClient from "@/components/RouteMapClient";
-import { safeBusRoutes, safeLocations, safeStops, stopId, ttc } from "@/lib/ttc";
+import { fetchAllLocations, safeBusRoutes, safeStops, stopId, ttc } from "@/lib/ttc";
 import { decodePolyline } from "@/lib/polyline";
 import type { Bus as BusType, Locale, RoutePolylines, RouteStop } from "@/lib/types";
 import type { BusStop } from "@/lib/types";
@@ -60,7 +60,7 @@ export default async function RouteDetailPage({
           for (const s of fwd) byId.set(s.id, { ...s, direction: "forward" });
           for (const s of bwd) {
             const ex = byId.get(s.id);
-            byId.set(s.id, ex ? { ...ex, ...s, direction: "forward" } : { ...s, direction: "backward" });
+            byId.set(s.id, ex ? { ...ex, ...s, direction: "backward" } : { ...s, direction: "backward" });
           }
           stops = Array.from(byId.values());
           break;
@@ -75,25 +75,18 @@ export default async function RouteDetailPage({
       }
       if (stops.length === 0 && resolvedId) {
         try {
-          const [locsFwd, locsBwd] = await Promise.all([
-            safeLocations({ busId: resolvedId, forward: true }),
-            safeLocations({ busId: resolvedId, forward: false }),
-          ]);
-          const locs = [
-            ...locsFwd.map((x) => ({ x, dir: "forward" as const })),
-            ...locsBwd.map((x) => ({ x, dir: "backward" as const })),
-          ];
-          if (locs.length > 0) {
-            livePositions = locs.map(({ x, dir }) => ({
-              lat: x.lat,
-              lon: x.lon,
-              heading: x.heading ?? null,
-              nextStopId: x.nextStopId ?? null,
-              direction: dir,
+          const tagged = await fetchAllLocations({ busId: resolvedId });
+          if (tagged.length > 0) {
+            livePositions = tagged.map(({ loc, direction }) => ({
+              lat: loc.lat,
+              lon: loc.lon,
+              heading: loc.heading ?? null,
+              nextStopId: loc.nextStopId ?? null,
+              direction,
             }));
           }
         } catch {
-          // Error swallowed by safeLocations
+          /* fetchAllLocations swallows internally */
         }
         if (stops.length === 0 && livePositions.length > 0) {
           try {
